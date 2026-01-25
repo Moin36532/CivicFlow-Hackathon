@@ -1,6 +1,6 @@
 fpdf==1.7.2
 opik==1.9.98
-protobuf==6.33.4
+protobuf
 python-dotenv==1.2.1
 streamlit==1.52.1
 google-generativeai
