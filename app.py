@@ -24,7 +24,7 @@ if not gemini_key:
 
 # Configure AI Tools
 genai.configure(api_key=gemini_key)
-model = genai.GenerativeModel('gemini-3-flash')
+model = genai.GenerativeModel('gemini-2.5-flash-lite')
 
 # Configure Opik (Forces data to go to the Comet Dashboard)
 if opik_key:

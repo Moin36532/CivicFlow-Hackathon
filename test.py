@@ -6,12 +6,13 @@ load_dotenv()
 
 client = genai.Client()
 
-response = client.models.generate_content(
-    model="gemini-3-flash-preview",
-    contents="Explain how AI works in a few words",
-)
-print(response.text)
-for model in genai.list_models():
-    print(f"Model Name: {model.name}")
-    print(f"Supported Methods: {model.supported_generation_methods}")
-    print("-" * 20)
+# response = client.models.generate_content(
+#     model="gemini-3-flash-preview",
+#     contents="Explain how AI works in a few words",
+# )
+import google.generativeai as genai
+
+genai.configure(api_key="AIzaSyDw8ho8rGxh5WGfKuCEMfUC5AsBNQpUakc")
+
+for m in genai.list_models():
+    print(m.name)
