@@ -7,32 +7,25 @@ from fpdf import FPDF
 from dotenv import load_dotenv
 from datetime import datetime
 
-# 1. IMPORT OPIK (For the $5,000 Prize)
 import opik
 
-# 2. SETUP & CONFIGURATION
 load_dotenv()
 
-# Load Keys
 gemini_key = os.environ.get("GOOGLE_API_KEY")
 opik_key = os.environ.get("OPIK_API_KEY")
 
-# Safety Check
 if not gemini_key:
     st.error("🚨 CRITICAL ERROR: GEMINI_API_KEY not found in .env file.")
     st.stop()
 
-# Configure AI Tools
 genai.configure(api_key=gemini_key)
 model = genai.GenerativeModel('gemini-2.5-flash-lite')
 
-# Configure Opik (Forces data to go to the Comet Dashboard)
 if opik_key:
     opik.configure(use_local=False)
 else:
     print("⚠️ Warning: OPIK_API_KEY not found. Tracking disabled.")
 
-# --- DATABASE ENGINE ---
 DB_FILE = "complaints.json"
 
 def load_db():
@@ -83,8 +76,6 @@ def add_comment(issue_id, comment_text):
             })
     with open(DB_FILE, "w") as f:
         json.dump(data, f, indent=4)
-
-# --- AI AGENTS (With Opik Tracking) ---
 
 @opik.track(name="CivicFlow Inspector")
 def analyze_evidence(text_content, image_data=None, location=""):
@@ -152,12 +143,9 @@ def create_legal_pdf(issue, description, location):
     pdf.output(filename)
     return filename
 
-# --- UI SETUP ---
 st.set_page_config(page_title="CivicFlow", page_icon="📢", layout="wide")
 
-# SIDEBAR: Community Feed
 with st.sidebar:
-    # 1. NEW CAMPAIGN BUTTON
     if st.button("➕ Start New Campaign", type="primary"):
         st.session_state.current_report = None
         st.session_state.current_plan = None
@@ -177,30 +165,24 @@ with st.sidebar:
                 
                 c1, c2, c3 = st.columns([1, 1, 1])
                 
-                # VIEW Button
                 if c1.button("📂", key=f"view_{item['id']}", help="Open this case"):
                     st.session_state.current_report = item
                     st.session_state.current_plan = item.get('plan', None)
                     st.rerun()
                 
-                # VOTE Button
                 if c2.button(f"🔥 {item['votes']}", key=f"v_{item['id']}"):
                     add_vote(item['id'])
                     st.rerun()
                     
-                # COMMENT Indicator
                 comment_count = len(item.get('comments', []))
                 c3.caption(f"💬 {comment_count}")
 
-# MAIN PAGE LOGIC
 st.title("📢 CivicFlow")
 
-# IF a report is selected, show Dashboard
 if "current_report" in st.session_state and st.session_state.current_report:
     report = st.session_state.current_report
     plan = st.session_state.get('current_plan')
     
-    # Back button just in case
     if st.button("⬅️ Back to Home"):
         st.session_state.current_report = None
         st.rerun()
@@ -254,7 +236,6 @@ if "current_report" in st.session_state and st.session_state.current_report:
             add_comment(report['id'], new_comment)
             st.rerun()
 
-# ELSE show the "New Report" Input Form
 else:
     st.markdown("**Bureaucracy is slow. We are fast.** Report an issue to auto-generate legal pressure.")
     st.subheader("📝 New Report")
@@ -272,7 +253,6 @@ else:
             try:
                 image_data = {"mime_type": uploaded_file.type, "data": uploaded_file.getvalue()} if uploaded_file else None
                 
-                # These calls are now TRACKED by Opik!
                 analysis = analyze_evidence(description_input, image_data, location_input)
                 plan = generate_battle_plan(analysis['description'])
                 
