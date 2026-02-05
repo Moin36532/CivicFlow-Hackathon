@@ -6,8 +6,15 @@ import os
 import json
 
 # Import our custom modules
-from backend.database import save_issue_to_db, get_open_issues, get_nearby_volunteers
-from backend.ai_agent import classify_issue, rank_issues_for_user, match_volunteers_agent, generate_legal_text
+# Import our custom modules
+try:
+    from backend.database import save_issue_to_db, get_open_issues, get_nearby_volunteers
+    from backend.ai_agent import classify_issue, rank_issues_for_user, match_volunteers_agent, generate_legal_text
+    from backend.rag_agent import chat_rag_agent
+except ImportError:
+    from database import save_issue_to_db, get_open_issues, get_nearby_volunteers
+    from ai_agent import classify_issue, rank_issues_for_user, match_volunteers_agent, generate_legal_text
+    from rag_agent import chat_rag_agent
 
 app = FastAPI(title="CivicFlow Brain")
 
@@ -237,7 +244,7 @@ async def get_department_stats():
     }
 
 # --- CHATBOT ENDPOINT ---
-from backend.rag_agent import chat_rag_agent
+
 
 @app.post("/chat")
 async def chat_endpoint(query: str = Form(...), use_docs: bool = Form(True)):

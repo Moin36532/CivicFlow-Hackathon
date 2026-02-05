@@ -2,7 +2,10 @@ import google.generativeai as genai
 import os
 import json
 import opik
-from backend.database import get_open_issues
+try:
+    from backend.database import get_open_issues
+except ImportError:
+    from database import get_open_issues
 
 # Configure Opik (Safety Tracking)
 if os.environ.get("OPIK_API_KEY"):
