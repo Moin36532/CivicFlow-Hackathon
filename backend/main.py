@@ -8,11 +8,11 @@ import json
 # Import our custom modules
 # Import our custom modules
 try:
-    from backend.database import save_issue_to_db, get_open_issues, get_nearby_volunteers
+    from backend.database import save_issue_to_db, get_open_issues, get_nearby_volunteers, get_issue_by_id, get_issue_comments, add_comment
     from backend.ai_agent import classify_issue, rank_issues_for_user, match_volunteers_agent, generate_legal_text
     from backend.rag_agent import chat_rag_agent
 except ImportError:
-    from database import save_issue_to_db, get_open_issues, get_nearby_volunteers
+    from database import save_issue_to_db, get_open_issues, get_nearby_volunteers, get_issue_by_id, get_issue_comments, add_comment
     from ai_agent import classify_issue, rank_issues_for_user, match_volunteers_agent, generate_legal_text
     from rag_agent import chat_rag_agent
 
@@ -164,7 +164,6 @@ async def get_volunteer_feed(user_skills: str = Form(...), user_lat: float = For
 async def get_issue(issue_id: int):
     try:
         # 1. Fetch from DB
-        from backend.database import get_issue_by_id
         issue = get_issue_by_id(issue_id)
         
         if not issue:
@@ -200,7 +199,6 @@ async def get_issue(issue_id: int):
 @app.get("/comments/{issue_id}")
 async def get_comments(issue_id: int):
     print(f"DEBUG: Fetching comments for issue {issue_id}")
-    from backend.database import get_issue_comments
     comments = get_issue_comments(issue_id)
     print(f"DEBUG: Found {len(comments)} comments")
     return {"comments": comments}
@@ -208,7 +206,6 @@ async def get_comments(issue_id: int):
 @app.post("/comments")
 async def post_comment(issue_id: int = Form(...), user_name: str = Form(...), text: str = Form(...), avatar: str = Form("")):
     print(f"DEBUG: Posting comment for issue {issue_id}: {text}")
-    from backend.database import add_comment
     new_id = add_comment(issue_id, user_name, text, avatar)
     return {"status": "success", "id": new_id}
 

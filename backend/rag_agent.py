@@ -54,12 +54,11 @@ def chat_rag_agent(query, use_docs=True):
     """
     RAG Chatbot: Answers query using context if requested.
     """
-    api_key = os.environ.get("GOOGLE_API_KEY")
-    if not api_key:
-        return "I'm sorry, my brain (API Key) is missing. I can't think right now."
-
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-2.0-flash-lite')
+    # Import utility
+    try:
+        from backend.gemini_utils import generate_with_fallback
+    except ImportError:
+        from gemini_utils import generate_with_fallback
 
     if use_docs:
         context = retrieve_documents(query)
@@ -85,7 +84,6 @@ def chat_rag_agent(query, use_docs=True):
         """
 
     try:
-        response = model.generate_content(prompt)
-        return response.text
+        return generate_with_fallback(prompt)
     except Exception as e:
         return f"I encountered an error thinking about that: {e}"

@@ -14,12 +14,11 @@ if not api_key:
     print("⚠️ WARNING: GOOGLE_API_KEY not found.")
 
 if api_key:
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-2.5-flash')
-
-# Configure Opik (Safety Tracking)
-if os.environ.get("OPIK_API_KEY"):
-    opik.configure(use_local=False)
+# Import our custom modules
+try:
+    from backend.gemini_utils import generate_with_fallback
+except ImportError:
+    from gemini_utils import generate_with_fallback
 
 # --- AGENT 1: THE CLASSIFIER ---
 @opik.track(name="CivicFlow Classifier")
@@ -48,10 +47,11 @@ def classify_issue(text_description: str, image_bytes: bytes = None, mime_type: 
     try:
         if image_bytes and mime_type:
             img_payload = {"mime_type": mime_type, "data": image_bytes}
-            response = model.generate_content([prompt, img_payload])
+            response_text = generate_with_fallback(prompt, img_payload)
         else:
-            response = model.generate_content(prompt)
-        return json.loads(response.text.replace("```json", "").replace("```", "").strip())
+            response_text = generate_with_fallback(prompt)
+            
+        return json.loads(response_text.replace("```json", "").replace("```", "").strip())
     except Exception as e:
         import time
         print(f"❌ AI Error: {e}")
@@ -65,7 +65,7 @@ def classify_issue(text_description: str, image_bytes: bytes = None, mime_type: 
             "responsible_department": "General Municipal Dept",
             "legal_precedent": "Pending Analysis",
             "matched_volunteers_count": 0,
-            "ai_analysis": "AI Service unavailable (Missing API Key). Using fallback analysis."
+            "ai_analysis": "AI Service unavailable. Using fallback analysis."
         }
 
 # --- AGENT 2: THE MATCHER ---
@@ -80,8 +80,8 @@ def match_volunteers_agent(problem_description: str, candidates: list):
     RETURN JSON ONLY: {{ "ranked_matches": [ {{ "name": "Name", "reason": "Why?" }} ] }}
     """
     try:
-        response = model.generate_content(prompt)
-        return json.loads(response.text.replace("```json", "").replace("```", "").strip())
+        response_text = generate_with_fallback(prompt)
+        return json.loads(response_text.replace("```json", "").replace("```", "").strip())
     except Exception:
         return {"ranked_matches": []}
 
@@ -99,8 +99,8 @@ def rank_issues_for_user(user_profile: dict, issues_list: list):
     RETURN JSON: {{ "recommended": [ {{ "issue_id": 123, "match_score": 90, "reason": "Why?" }} ] }}
     """
     try:
-        response = model.generate_content(prompt)
-        return json.loads(response.text.replace("```json", "").replace("```", "").strip())
+        response_text = generate_with_fallback(prompt)
+        return json.loads(response_text.replace("```json", "").replace("```", "").strip())
     except Exception:
         return {"recommended": []}
 
@@ -126,7 +126,6 @@ def generate_legal_text(issue_title, issue_desc, category="General", ai_analysis
     6. Keep it under 200 words.
     """
     try:
-        response = model.generate_content(prompt)
-        return response.text
+        return generate_with_fallback(prompt)
     except Exception:
         return f"Formal notice regarding {issue_title}. Immediate action required under Local Govt Act 2013. The condition described as '{issue_desc}' constitutes a public nuisance and safety hazard."
