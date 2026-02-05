@@ -1,0 +1,5 @@
+.env
+__pycache__/
+complaints.json
+*.pdf
+modellist.tst

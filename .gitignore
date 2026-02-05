@@ -1,5 +1,44 @@
-.env
+# --- Dependencies ---
+node_modules/
 __pycache__/
-complaints.json
-*.pdf
-modellist.tst
+*.py[cod]
+*$py.class
+
+# --- Python Virtual Envs ---
+venv/
+.venv/
+env/
+
+# --- Environment Variables (Safety) ---
+.env
+.env.local
+.env.*.local
+
+# --- Build Outputs ---
+dist/
+build/
+
+# --- Database ---
+*.db
+*.sqlite
+*.sqlite3
+civic_flow.db
+
+# --- Logs ---
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+*.log
+
+# --- OS & IDE ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# --- Specific Project Paths ---
+Design App Identity and Flow/node_modules/
+Design App Identity and Flow/dist/
+backend/__pycache__/

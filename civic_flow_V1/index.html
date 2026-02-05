@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CivicFlow | AI Community Action</title>
+    <!-- CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- JS -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #020617;
+            color: white;
+        }
+
+        /* Glass & Gradients */
+        .glass {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .hero-gradient {
+            background: radial-gradient(circle at top right, #3b82f6 0%, transparent 40%), radial-gradient(circle at bottom left, #ef4444 0%, transparent 40%);
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 20px rgba(37, 99, 235, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-enter {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        /* Map Overrides */
+        #map {
+            height: 100%;
+            width: 100%;
+            z-index: 1;
+        }
+
+        .leaflet-popup-content-wrapper {
+            background: #0f172a;
+            color: white;
+            border: 1px solid #334155;
+        }
+
+        .leaflet-popup-tip {
+            background: #0f172a;
+        }
+
+        /* Utility */
+        .hide-scroll::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+
+<body class="h-screen overflow-hidden relative selection:bg-blue-500 selection:text-white hero-gradient">
+
+    <div id="root" class="w-full h-full"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- COMPONENTS ---
+
+        function LandingPage({ onStart }) {
+            return (
+                <div className="flex flex-col items-center justify-center h-full text-center p-6 animate-enter">
+                    <div className="mb-6 relative">
+                        <div className="absolute -inset-4 bg-blue-500 blur-3xl opacity-20 rounded-full"></div>
+                        <i className="fas fa-university text-7xl text-white relative z-10 drop-shadow-2xl"></i>
+                    </div>
+                    <h1 className="text-6xl font-black tracking-tighter mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-white">
+                        CivicFlow.
+                    </h1>
+                    <p className="text-xl text-gray-400 max-w-lg mb-8 leading-relaxed">
+                        Turning community concern into <span className="text-blue-400 font-bold">coordinated political action</span>.
+                        We automate the bureaucracy so you can fix your city.
+                    </p>
+                    <button onClick={onStart} className="btn-primary px-10 py-4 rounded-full text-xl font-bold flex items-center gap-3 group">
+                        Start Revolution <i className="fas fa-arrow-right group-hover:translate-x-1 transition"></i>
+                    </button>
+
+                    <div className="absolute bottom-8 flex gap-8 text-gray-500 text-sm font-medium tracking-widest uppercase">
+                        <span><i className="fas fa-check text-green-500 mr-2"></i>AI Analysis</span>
+                        <span><i className="fas fa-check text-green-500 mr-2"></i>Legal Notices</span>
+                        <span><i className="fas fa-check text-green-500 mr-2"></i>City Maps</span>
+                    </div>
+                </div>
+            );
+        }
+
+        function MapComponent({ cases, center, onCaseSelect }) {
+            const mapRef = useRef(null);
+            const containerRef = useRef(null);
+            const markersRef = useRef([]);
+
+            // Init Map (Run once on mount/container ready)
+            useEffect(() => {
+                if (typeof L === 'undefined' || !containerRef.current) return;
+
+                if (!mapRef.current) {
+                    try {
+                        mapRef.current = L.map(containerRef.current).setView([center.lat, center.lon], 13);
+                        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                            maxZoom: 20
+                        }).addTo(mapRef.current);
+                    } catch (e) { console.error("Map Init Error", e); }
+                }
+
+                return () => {
+                    if (mapRef.current) {
+                        mapRef.current.remove();
+                        mapRef.current = null;
+                    }
+                }
+            }, []);
+
+            // Handle Updates (View & Markers)
+            useEffect(() => {
+                if (!mapRef.current) return;
+
+                // Update View
+                try {
+                    mapRef.current.setView([center.lat, center.lon], 13);
+                } catch (e) { }
+
+                // Update Markers
+                if (markersRef.current) {
+                    markersRef.current.forEach(m => mapRef.current.removeLayer(m));
+                    markersRef.current = [];
+                }
+
+                if (Array.isArray(cases)) {
+                    cases.forEach(c => {
+                        // FILTER INVALID DATA
+                        if (!c.lat || !c.lon) return;
+
+                        try {
+                            const color = c.severity > 7 ? '#EF4444' : '#EAB308';
+                            const marker = L.circleMarker([c.lat, c.lon], {
+                                color: color, fillColor: color, fillOpacity: 0.6, radius: 8 + (c.votes * 0.5)
+                            }).addTo(mapRef.current);
+
+                            marker.bindPopup(`<b>${c.issue}</b><br>Severity: ${c.severity}/10`);
+                            marker.on('click', () => onCaseSelect(c));
+                            markersRef.current.push(marker);
+                        } catch (e) { console.error("Marker Error", e); }
+                    });
+                }
+            }, [cases, center, onCaseSelect]);
+
+            return <div ref={containerRef} className="w-full h-full rounded-r-xl bg-gray-900"></div>;
+        }
+
+        // --- MAIN APP ---
+        function App() {
+            const [view, setView] = useState('landing');
+            const [loading, setLoading] = useState(false);
+            const [cases, setCases] = useState([]);
+            const [currentCase, setCurrentCase] = useState(null);
+
+            // Form Data
+            const [form, setForm] = useState({ loc: 'Bahawalpur, Punjab', desc: '', file: null, preview: null });
+
+            // Fetch cases on mount
+            useEffect(() => {
+                const fetchCases = async () => {
+                    try {
+                        const res = await fetch('http://127.0.0.1:8000/cases');
+                        const data = await res.json();
+                        if (Array.isArray(data)) {
+                            const norm = data.map(d => ({ ...d, issue: d.issue || d.analysis?.issue, severity: d.severity || d.analysis?.severity }));
+                            setCases(norm);
+                        }
+                    } catch (err) { console.log("Backend offline?", err); }
+                }
+                fetchCases();
+            }, []);
+
+            const handlePhoto = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    setForm({ ...form, file, preview: URL.createObjectURL(file) });
+                }
+            };
+
+            const handleSubmit = async () => {
+                if (!form.desc) return;
+                setLoading(true);
+                const formData = new FormData();
+                formData.append('location', form.loc);
+                formData.append('description', form.desc);
+                if (form.file) formData.append('file', form.file);
+
+                try {
+                    const res = await fetch('http://127.0.0.1:8000/analyze', { method: 'POST', body: formData });
+                    const newCase = await res.json();
+                    const normCase = { ...newCase, issue: newCase.analysis.issue, severity: newCase.analysis.severity };
+
+                    setCases([normCase, ...cases]);
+                    setCurrentCase(normCase);
+                    setView('action');
+                } catch (e) { alert("Error connecting to AI Backend"); }
+                setLoading(false);
+            };
+
+            const sendEmail = async () => {
+                try {
+                    const formData = new FormData();
+                    formData.append('issue', currentCase.issue);
+                    formData.append('location', currentCase.location);
+
+                    await fetch('http://127.0.0.1:8000/email-authorities', { method: 'POST', body: formData });
+                    alert(`✅ SUCCESS: Official notice for "${currentCase.issue}" has been dispatched to 4 government offices.`);
+                } catch (e) { alert("Failed to send email"); }
+            };
+
+            // VIEWS
+            if (view === 'landing') return <LandingPage onStart={() => setView('form')} />;
+
+            return (
+                <div className="w-full h-full flex items-center justify-center p-8">
+
+                    {/* BACK BUTTON */}
+                    <button onClick={() => setView('landing')} className="absolute top-8 left-8 text-gray-500 hover:text-white transition z-50">
+                        <i className="fas fa-arrow-left mr-2"></i> Home
+                    </button>
+
+                    {/* MAIN MODAL */}
+                    <div className="w-full max-w-6xl h-[85vh] glass rounded-2xl flex overflow-hidden shadow-2xl animate-enter">
+
+                        {/* LEFT PANEL: Controls/Details */}
+                        <div className="w-1/3 border-r border-gray-800 flex flex-col bg-gray-900/50">
+
+                            {/* FORM VIEW */}
+                            {view === 'form' && (
+                                <div className="p-8 flex flex-col h-full">
+                                    <h2 className="text-3xl font-bold mb-2">New Report</h2>
+                                    <p className="text-gray-400 text-sm mb-8">CivicFlow AI will analyze your evidence and draft legal demands.</p>
+
+                                    <div className="space-y-6 flex-1 overflow-y-auto hide-scroll">
+                                        <div>
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Location</label>
+                                            <input value={form.loc} onChange={e => setForm({ ...form, loc: e.target.value })}
+                                                className="w-full bg-gray-800 border-none rounded p-3 mt-1 text-white focus:ring-2 ring-blue-500 transition" />
+                                        </div>
+
+                                        <div>
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Photo Evidence</label>
+                                            <div className="mt-1 w-full h-32 border-2 border-dashed border-gray-700 rounded-lg flex flex-col items-center justify-center text-gray-500 hover:border-blue-500 hover:text-blue-500 cursor-pointer transition relative overflow-hidden group">
+                                                <input type="file" onChange={handlePhoto} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
+                                                {form.preview ? (
+                                                    <img src={form.preview} className="absolute inset-0 w-full h-full object-cover" />
+                                                ) : (
+                                                    <><i className="fas fa-camera text-2xl mb-2"></i> <span className="text-xs">Click to Upload</span></>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Description</label>
+                                            <textarea value={form.desc} onChange={e => setForm({ ...form, desc: e.target.value })} placeholder="What is the hazard?"
+                                                className="w-full h-24 bg-gray-800 border-none rounded p-3 mt-1 text-white focus:ring-2 ring-blue-500 transition resize-none"></textarea>
+                                        </div>
+                                    </div>
+
+                                    <button onClick={handleSubmit} disabled={loading} className="btn-primary w-full py-4 rounded-xl font-bold mt-6 flex justify-center items-center gap-2">
+                                        {loading ? <i className="fas fa-spinner fa-spin"></i> : <><i className="fas fa-search-location"></i> Analyze & Map</>}
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* RESULTS VIEW */}
+                            {view === 'action' && currentCase && (
+                                <div className="p-8 flex flex-col h-full">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${currentCase.severity > 7 ? 'bg-red-500/20 text-red-500' : 'bg-yellow-500/20 text-yellow-500'}`}>
+                                            Severity {currentCase.severity}/10
+                                        </span>
+                                        <span className="text-xs text-gray-500"><i className="fas fa-clock mr-1"></i> Just now</span>
+                                    </div>
+
+                                    <h2 className="text-2xl font-bold leading-tight mb-4">{currentCase.issue}</h2>
+
+                                    <div className="bg-gray-800/50 p-4 rounded-lg mb-6 border-l-2 border-blue-500">
+                                        <h4 className="text-xs font-bold text-gray-400 mb-1">AI TECHNICAL ANALYSIS</h4>
+                                        <p className="text-sm text-gray-300 italic">"{currentCase.analysis?.description || currentCase.description}"</p>
+                                    </div>
+
+                                    <div className="flex-1 overflow-y-auto hide-scroll space-y-3 mb-6">
+                                        <h3 className="text-xs font-bold text-gray-500 uppercase">Battle Plan</h3>
+                                        {currentCase.plan?.phases?.map((p, i) => (
+                                            <div key={i} className="flex gap-3 text-sm">
+                                                <div className="min-w-[20px] h-[20px] rounded-full bg-blue-900 text-blue-400 flex items-center justify-center text-xs font-bold">{i + 1}</div>
+                                                <p className="text-gray-300">{p.task}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="flex flex-col gap-3">
+                                        <button onClick={() => window.open(`http://127.0.0.1:8000/generate-pdf?issue=${currentCase.issue}&description=${currentCase.description}&location=${form.loc}`, '_blank')}
+                                            className="w-full py-3 bg-white text-black font-bold rounded-lg hover:bg-gray-200 transition flex items-center justify-center gap-2">
+                                            <i className="fas fa-file-pdf text-red-600"></i> Download Legal Notice
+                                        </button>
+                                        <button onClick={sendEmail} className="w-full py-3 border border-gray-600 text-gray-300 font-bold rounded-lg hover:border-blue-500 hover:text-white transition flex items-center justify-center gap-2">
+                                            <i className="fas fa-paper-plane text-blue-500"></i> Email Authorities
+                                        </button>
+                                        <button onClick={() => setView('form')} className="text-center text-xs text-gray-500 hover:text-white mt-2">
+                                            Report Another Issue
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                        </div>
+
+                        {/* RIGHT PANEL: Map */}
+                        <div className="w-2/3 h-full relative bg-gray-900 border-l border-gray-800">
+                            <MapComponent
+                                cases={cases}
+                                center={view === 'action' ? { lat: currentCase.lat, lon: currentCase.lon } : { lat: 29.3956, lon: 71.6833 }}
+                                onCaseSelect={(c) => { setCurrentCase(c); setView('action'); }}
+                            />
+
+                            {/* Overlay Legend */}
+                            <div className="absolute top-4 right-4 z-[9999] glass-panel px-4 py-2 rounded-lg flex items-center gap-4 text-xs font-bold">
+                                <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-red-500"></div> Critical</div>
+                                <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-yellow-500"></div> Moderate</div>
+                                <div className="text-blue-400">{cases.length} Active Cases</div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+
+</html>

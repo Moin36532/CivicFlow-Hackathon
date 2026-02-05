@@ -1,0 +1,68 @@
+[
+    {
+        "id": 1,
+        "issue": "Streetlight Malfunction",
+        "location": "Bahawalpur, Punjab",
+        "lat": 29.38054201362933,
+        "lon": 71.67899325110288,
+        "severity": 8,
+        "description": "Pole-mounted luminaire confirmed non-operational, contributing to localized illumination deficit.",
+        "user_notes": "Street light is broken in my area.",
+        "status": "Active",
+        "votes": 3,
+        "comments": [],
+        "plan": {
+            "phases": [
+                {
+                    "phase": "1. IMMEDIATE DEMAND",
+                    "task": "Submit official 'Urgent Repair Notice' via certified mail/email to responsible entity (city/utility). Attach date-stamped photo evidence and demand repair timeline within 48 hours, citing safety and public nuisance codes."
+                },
+                {
+                    "phase": "2. PUBLIC ACCUSATION & PENALTY THREAT",
+                    "task": "Issue public safety alert via local media/social platforms, naming the responsible entity for negligence. File formal complaint with municipal code enforcement/public utility commission, demanding daily non-compliance penalties until repair."
+                },
+                {
+                    "phase": "3. LEGAL INJUNCTION & COMMUNITY LEVERAGE",
+                    "task": "Initiate process for small claims court action or 'Writ of Mandamus' to compel specific performance. Simultaneously, organize community petition and public shaming campaign targeting elected officials/company executives until full restoration."
+                }
+            ]
+        },
+        "timestamp": "2026-01-28 20:52"
+    },
+    {
+        "id": 2,
+        "issue": "Streetlight operational",
+        "location": "Bahawalpur, Punjab",
+        "lat": 29.40050478912508,
+        "lon": 71.67785205017506,
+        "severity": 2,
+        "description": "Citizen report of 'broken street lights' is directly contradicted by visual evidence. The depicted luminaire is observed to be functional and illuminated.",
+        "user_notes": "Street lights are broken.",
+        "status": "Active",
+        "votes": 4,
+        "comments": [
+            {
+                "user": "Neighbor",
+                "text": "asjgdhk",
+                "time": "21:18"
+            }
+        ],
+        "plan": {
+            "phases": [
+                {
+                    "phase": "1. IMMEDIATE OPERATIONAL STATUS VERIFICATION.",
+                    "task": "Rapidly deploy field unit to reported location, visually confirm luminaire functionality with time-stamped photographic evidence, and establish definitive operational status."
+                },
+                {
+                    "phase": "2. DIRECT CONTRADICTION & ACCOUNTABILITY DEMAND.",
+                    "task": "Immediately contact the reporting citizen, present irrefutable visual evidence, explicitly state the direct contradiction, and demand an explanation for the false report and the diverted resources."
+                },
+                {
+                    "phase": "3. REPORT TERMINATION & FORMAL ADVISORY.",
+                    "task": "Officially close the baseless service request. Issue a formal written advisory to the citizen detailing the verified discrepancy, resource misallocation, and reiterating strict accuracy requirements for future submissions."
+                }
+            ]
+        },
+        "timestamp": "2026-01-28 21:18"
+    }
+]
