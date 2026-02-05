@@ -13,7 +13,7 @@ if not api_key:
     # Fallback for safety if env not loaded
     print("⚠️ WARNING: GOOGLE_API_KEY not found.")
 
-if api_key:
+
 # Import our custom modules
 try:
     from backend.gemini_utils import generate_with_fallback
