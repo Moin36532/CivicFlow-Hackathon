@@ -839,7 +839,8 @@ function DepartmentStatsView() {
 
   useEffect(() => {
     // Fetch stats from backend
-    fetch('http://127.0.0.1:8000/departments/stats')
+    const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+    fetch(`${API_URL}/departments/stats`)
       .then(res => res.json())
       .then(data => {
         setStats(data);

@@ -12,49 +12,89 @@ DEMO_VOLUNTEERS = [
 ]
 
 DEMO_ISSUES = [
-    # --- GOVT ISSUES (Red) ---
     {
-        "title": "Open Manhole (Death Trap)",
-        "category": "GOVT",
-        "description": "Main sewage line cover missing in front of Girls College. Highly dangerous for pedestrians at night.",
+        "title": "Pothole on Main Street",
+        "category": "Road Safety",
+        "description": "Large pothole causing traffic hazard near intersection. Measures approx 2ft diameter.",
         "lat": 29.3958, "lon": 71.6835,
-        "tags": ["Danger", "Infrastructure", "Urgent"],
+        "tags": ["Road Safety", "Infrastructure"],
         "severity": 9,
-        "avatar": "https://cdn-icons-png.flaticon.com/512/564/564619.png",
-        "department": "Sanitation & Water Works",
-        "reported_by": "Jon Anderson"
+        "avatar": "https://img.freepik.com/premium-photo/happy-selfie-fitness-with-man-city-social-media-profile-picture-running-smile-workout-relax-with-portrait-male-runner-photo-road-exercise-training-freedom_590464-198210.jpg",
+        "department": "Traffic Police / Highways",
+        "reported_by": "Jon Anderson",
+        "ai_analysis": "This infrastructure issue poses a significant safety risk to motorists and pedestrians. The pothole measures approximately 2 feet in diameter and 6 inches deep, violating Municipal Road Safety Standards Section 4.2. Immediate action is required under Local Government Act 2013, Section 11-B."
     },
     {
-        "title": "Sparking Transformer",
-        "category": "GOVT",
-        "description": "WAPDA Transformer on Link Road is sparking heavily. Risk of fire to nearby shops.",
+        "title": "Food Drive - Winter Donations",
+        "category": "Food",
+        "description": "Collecting non-perishable items for local shelter. Urgent need for rice, lentils, and oil.",
         "lat": 29.3980, "lon": 71.6810,
-        "tags": ["Fire Risk", "Electrical"],
-        "severity": 8,
-        "avatar": "https://cdn-icons-png.flaticon.com/512/9693/9693685.png",
-        "department": "Energy Department (WAPDA)",
-        "reported_by": "Sarah Smith"
+        "tags": ["Food", "Charity"],
+        "severity": 5,
+        "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=256&q=80",
+        "department": "Social Welfare",
+        "reported_by": "James Smith",
+        "ai_analysis": "The local community shelter is experiencing increased demand due to winter conditions. They urgently need non-perishable food items. The shelter serves approximately 150 families daily. This is an excellent opportunity for community members to make a direct impact."
     },
-    # --- VOLUNTEER ISSUES (Green) ---
     {
-        "title": "Urgent: O- Blood Needed",
-        "category": "VOLUNTEER",
-        "description": "Thalassemia patient needs 2 pints of O-Negative blood immediately at Victoria Hospital.",
+        "title": "Blood Donation Camp",
+        "category": "Medical",
+        "description": "Urgent need for O+ blood type. City Hospital blood bank reserves are critically low.",
         "lat": 29.3955, "lon": 71.6830,
-        "tags": ["Medical", "Urgent", "Blood"],
-        "severity": 10,
-        "avatar": "https://i.pravatar.cc/150?u=patient1",
-        "department": "Health Department"
+        "tags": ["Medical", "Health"],
+        "severity": 8,
+        "avatar": "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?ixlib=rb-4.0.3&auto=format&fit=crop&w=256&q=80",
+        "department": "Health Department",
+        "reported_by": "Dr. Michael Chen",
+        "ai_analysis": "City Hospital has issued an urgent appeal for O+ blood donations. Current blood bank reserves are at critically low levels (only 2 days supply remaining). O+ is the most common blood type and is needed for emergency surgeries and trauma cases."
     },
     {
-        "title": "Found Lost Child",
-        "category": "VOLUNTEER",
-        "description": "Found a 5-year-old boy named 'Ali' near Model Town Park. He is safe with me. Need help finding parents.",
+        "title": "Overflowing Gutter",
+        "category": "Sanitation",
+        "description": "Sewage overflow in residential area, creating serious health hazards.",
         "lat": 29.3990, "lon": 71.6890,
-        "tags": ["Rescue", "Child"],
-        "severity": 10,
-        "avatar": "https://i.pravatar.cc/150?u=child",
-        "department": "Police / Child Protection"
+        "tags": ["Sanitation", "Health"],
+        "severity": 8,
+        "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=256&q=80",
+        "department": "Waste Management Co.",
+        "reported_by": "William Davis",
+        "ai_analysis": "Raw sewage overflow has been reported in a densely populated residential area, creating serious health hazards. This violates Environmental Protection Act Section 12-C and Public Health Standards 2020. Prolonged exposure can lead to waterborne diseases."
+    },
+    {
+        "title": "Elder Care Volunteers Needed",
+        "category": "Social",
+        "description": "Weekly visits to senior citizens living alone. Companionship and grocery assistance.",
+        "lat": 29.3970, "lon": 71.6850,
+        "tags": ["Social", "Elderly"],
+        "severity": 6,
+        "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=256&q=80",
+        "department": "Social Welfare",
+        "reported_by": "Emily Rodriguez",
+        "ai_analysis": "The Elder Care initiative needs volunteers to visit and assist senior citizens who live alone. Tasks include companionship and helping with grocery shopping. Studies show that regular social interaction significantly improves mental health for elderly individuals."
+    },
+    {
+        "title": "Illegal Construction Blocking Road",
+        "category": "Urban Planning",
+        "description": "Unauthorized construction blocking public access and reducing road width.",
+        "lat": 29.3965, "lon": 71.6825,
+        "tags": ["Construction", "Traffic"],
+        "severity": 7,
+        "avatar": "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?ixlib=rb-4.0.3&auto=format&fit=crop&w=256&q=80",
+        "department": "Development Authority",
+        "reported_by": "David Miller",
+        "ai_analysis": "An illegal construction has encroached upon public road space, reducing the road width by 40% and creating traffic congestion. This violates Urban Planning Act Section 15-B. The construction lacks proper permits and is blocking emergency vehicle access."
+    },
+    {
+        "title": "Tree Plantation Drive",
+        "category": "Environment",
+        "description": "Community tree planting event this weekend. Joining 200 native trees.",
+        "lat": 29.3945, "lon": 71.6845,
+        "tags": ["Environment", "Community"],
+        "severity": 4,
+        "avatar": "https://images.unsplash.com/photo-1607746882042-944635dfe10e?ixlib=rb-4.0.3&auto=format&fit=crop&w=256&q=80",
+        "department": "Parks & Horticulture",
+        "reported_by": "Sarah Connor",
+        "ai_analysis": "Join us for a community-wide tree plantation drive aimed at increasing green cover in our neighborhood. We plan to plant 200 native trees that will improve air quality, reduce urban heat, and provide habitat for local wildlife."
     }
 ]
 
