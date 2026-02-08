@@ -24,7 +24,7 @@ def generate_with_fallback(prompt, image_payload=None, system_instruction=None):
     # 1. Flash 2.5 (High Quality)
     # 2. Flash 2.0 (Fast/Stable)
     # 3. Flash 1.5 (Legacy/Backup)
-    models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash']
+    models_to_try = ['gemini-3','gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.5-flash-lite',]
     
     last_error = None
 

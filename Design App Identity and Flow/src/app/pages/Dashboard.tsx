@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { List, Map, Settings, Plus, LogOut, Flame, Mail, Calendar, MapPin, Building2, TrendingUp, AlertTriangle, Moon, Sun, Loader2, ChevronLeft, ChevronRight, Search, Filter, ArrowDownUp, Bot } from 'lucide-react';
+import { List, Map, Settings, Plus, LogOut, Flame, Mail, Calendar, MapPin, Building2, TrendingUp, AlertTriangle, Moon, Sun, Loader2, ChevronLeft, ChevronRight, Search, Filter, ArrowDownUp, Bot, ArrowLeft, Sparkles } from 'lucide-react';
 import { SafetyShield } from '@/app/components/civic/SafetyShield';
 import { SeverityBadge } from '@/app/components/civic/SeverityBadge';
 import { Button } from '@/app/components/ui/button';
@@ -42,7 +42,22 @@ export function Dashboard() {
   useEffect(() => {
     async function loadData() {
       setLoading(true);
-      const data = await fetchFeed();
+      let lat = 29.3956;
+      let lng = 71.6833;
+
+      if (navigator.geolocation) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject);
+          });
+          lat = position.coords.latitude;
+          lng = position.coords.longitude;
+        } catch (error) {
+          console.warn("Location access denied or failed, using formatted default.");
+        }
+      }
+
+      const data = await fetchFeed(lat, lng);
 
       setIssues(data);
       setLoading(false);
@@ -97,7 +112,8 @@ export function Dashboard() {
         <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-color)' }}>
           {!isSidebarCollapsed && (
             <h1 className="text-xl font-bold flex items-center gap-2 truncate" style={{ color: 'var(--text-primary)' }}>
-              🔥 Civic Flow
+              <img src="/assets/civic-flow-logo.png" alt="Logo" className="w-8 h-8 object-contain" />
+              Civic Flow
             </h1>
           )}
           <button
@@ -191,6 +207,14 @@ export function Dashboard() {
               onClick={() => setViewMode('departments')}
             />
 
+            <SidebarItem
+              icon={<ArrowLeft className="w-5 h-5" />}
+              label="Landing Page"
+              active={false}
+              collapsed={isSidebarCollapsed}
+              onClick={() => navigate('/')}
+            />
+
             <div className="my-4 border-t border-gray-200 dark:border-gray-700"></div>
 
             {/* Report Issue Button in Sidebar */}
@@ -234,7 +258,10 @@ export function Dashboard() {
         <header style={{ backgroundColor: 'var(--bg-primary)', borderBottom: '1px solid var(--border-color)' }} className="px-4 py-4 md:hidden">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>🔥Civic Flow</h1>
+              <h1 className="flex items-center gap-2 text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                <img src="/assets/civic-flow-logo.png" alt="Logo" className="w-8 h-8 object-contain" />
+                Civic Flow
+              </h1>
               <SafetyShield score={85} />
             </div>
             <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
@@ -372,8 +399,15 @@ export function Dashboard() {
             {/* Content Views */}
             {
               loading ? (
-                <div className="flex justify-center py-20">
-                  <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
+                <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                  <div className="relative">
+                    <Loader2 className="w-12 h-12 animate-spin text-blue-500" />
+                    <Sparkles className="w-5 h-5 text-yellow-400 absolute -top-1 -right-1 animate-pulse" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-semibold text-slate-700 dark:text-slate-300">Curating your civic feed...</p>
+                    <p className="text-sm text-slate-500">AI is analyzing {issues.length > 0 ? issues.length : 'nearby'} issues based on your skills</p>
+                  </div>
                 </div>
               ) : (
                 <>
@@ -669,85 +703,118 @@ function ProfileView({ user }: { user: any }) {
   )
 }
 
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Fix for default marker icon missing in Leaflet + React
+// Imports removed to use CDN or default behavior without breaking build
+
+// Default icon fix removed in favor of custom icons
+// L.Marker.prototype.options.icon = DefaultIcon;
+
+// Custom Icons
+// Custom Icons using DivIcon for reliability
+const GovernmentIcon = L.divIcon({
+  className: 'custom-div-icon',
+  html: `<div style="background-color: #ef4444; width: 30px; height: 30px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+           <span style="font-size: 16px;">🏛️</span>
+         </div>`,
+  iconSize: [30, 30],
+  iconAnchor: [15, 15],
+  popupAnchor: [0, -15]
+});
+
+const VolunteerIcon = L.divIcon({
+  className: 'custom-div-icon',
+  html: `<div style="background-color: #10b981; width: 30px; height: 30px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+           <span style="font-size: 16px;">🤝</span>
+         </div>`,
+  iconSize: [30, 30],
+  iconAnchor: [15, 15],
+  popupAnchor: [0, -15]
+});
+
+// Component to recenter map when location changes
+function MapRecenter({ lat, lng }: { lat: number, lng: number }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView([lat, lng], map.getZoom());
+  }, [lat, lng, map]);
+  return null;
+}
+
 function MapView({ issues }: { issues: Issue[] }) {
-  // 1. Calculate Bounds dynamically
-  const lats = issues.map(i => i.location.lat);
-  const lons = issues.map(i => i.location.lng);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [defaultLocation] = useState({ lat: 29.3956, lng: 71.6833 }); // Bahawalpur Default
 
-  let minLat = lats.length ? Math.min(...lats) : 29.35;
-  let maxLat = lats.length ? Math.max(...lats) : 29.45;
-  let minLon = lons.length ? Math.min(...lons) : 71.65;
-  let maxLon = lons.length ? Math.max(...lons) : 71.72;
+  useEffect(() => {
+    console.log("MapView mounted. Issues:", issues);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          console.log("User Location Found:", position.coords);
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.warn("Location error:", error);
+        }
+      );
+    }
+  }, [issues]);
 
-  const latPadding = (maxLat - minLat) * 0.1 || 0.005;
-  const lonPadding = (maxLon - minLon) * 0.1 || 0.005;
-
-  minLat -= latPadding;
-  maxLat += latPadding;
-  minLon -= lonPadding;
-  maxLon += lonPadding;
+  const center = userLocation || defaultLocation;
 
   return (
-    <div className="relative bg-slate-900 rounded-lg overflow-hidden shadow-xl border border-slate-700" style={{ height: '600px' }}>
-      <div className="absolute inset-0 bg-slate-900">
-        <div className="absolute inset-0 opacity-20">
-          <svg width="100%" height="100%">
-            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5" />
-            </pattern>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-          </svg>
-        </div>
+    <div className="relative bg-slate-100 dark:bg-slate-900 rounded-lg overflow-hidden shadow-xl border border-slate-200 dark:border-slate-700 h-[600px] z-0">
+      <MapContainer
+        center={[center.lat, center.lng]}
+        zoom={13}
+        scrollWheelZoom={true}
+        style={{ height: '100%', width: '100%' }}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
 
-        {issues.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-            <p>No issues found on map</p>
-          </div>
+        {/* User Location Marker */}
+        {userLocation && (
+          <Marker position={[userLocation.lat, userLocation.lng]} title="You are here">
+            <Popup>You are here</Popup>
+          </Marker>
         )}
 
-        {issues.map((issue) => {
-          const latPct = ((issue.location.lat - minLat) / (maxLat - minLat)) * 100;
-          const lonPct = ((issue.location.lng - minLon) / (maxLon - minLon)) * 100;
-          const topPos = 100 - Math.max(0, Math.min(100, latPct));
-          const leftPos = Math.max(0, Math.min(100, lonPct));
+        <MapRecenter lat={center.lat} lng={center.lng} />
+
+        {/* Issue Markers */}
+        {issues.map(issue => {
+          const lat = Number(issue.location.lat);
+          const lng = Number(issue.location.lng);
+          if (isNaN(lat) || isNaN(lng)) return null;
 
           return (
-            <div
+            <Marker
               key={issue.id}
-              className="absolute transform -translate-x-1/2 -translate-y-1/2"
-              style={{ left: `${leftPos}%`, top: `${topPos}%` }}
+              position={[lat, lng]}
+              icon={issue.type === 'government' ? GovernmentIcon : VolunteerIcon}
             >
-              <div className={`group relative cursor-pointer transition-all hover:z-10`}>
-                <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white text-black text-xs px-2 py-1 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                  {issue.title}
+              <Popup>
+                <div className="min-w-[200px]">
+                  <h3 className="font-bold text-sm">{issue.title}</h3>
+                  <p className="text-xs text-gray-600 my-1">{issue.location.address}</p>
+                  <div className={`text-xs font-semibold px-2 py-0.5 rounded-full inline-block ${issue.type === 'government' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                    {issue.type === 'government' ? 'Government' : 'Volunteer'}
+                  </div>
                 </div>
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center shadow-lg border-2 border-white transition-transform hover:scale-125"
-                  style={{ backgroundColor: issue.type === 'government' ? 'var(--alert-red)' : 'var(--emerald-green)' }}
-                >
-                  <span className="text-white font-bold text-sm">{issue.severity}</span>
-                </div>
-                {issue.type === 'government' && issue.severity > 8 && (
-                  <div className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: 'var(--alert-red)', opacity: 0.4 }} />
-                )}
-              </div>
-            </div>
+              </Popup>
+            </Marker>
           );
         })}
-      </div>
-      <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur rounded-lg p-4 shadow-lg border border-gray-200">
-        <h4 className="font-semibold mb-2 text-slate-800">Legend</h4>
-        <div className="flex flex-col gap-2 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: 'var(--alert-red)' }} />
-            <span className="text-slate-700">Government</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: 'var(--emerald-green)' }} />
-            <span className="text-slate-700">Volunteer</span>
-          </div>
-        </div>
-      </div>
+      </MapContainer>
     </div>
   );
 }
@@ -788,7 +855,17 @@ function FeedView({ issues, onProfileClick }: { issues: Issue[], onProfileClick:
             <SeverityBadge score={issue.severity} />
           </div>
 
-          <p className="mb-3 text-sm line-clamp-2 leading-relaxed" style={{ color: 'var(--text-primary)' }}>{issue.description}</p>
+          <div className="flex gap-4 mb-3">
+            <p className="text-sm line-clamp-3 leading-relaxed text-gray-600 dark:text-gray-300 flex-1">
+              {issue.description}
+            </p>
+            {/* Small Issue Image Thumbnail */}
+            {issue.imageUrl && (
+              <div className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 rounded-lg overflow-hidden border border-slate-100 dark:border-slate-700">
+                <img src={issue.imageUrl} alt={issue.title} className="w-full h-full object-cover" />
+              </div>
+            )}
+          </div>
 
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-4">
@@ -828,8 +905,9 @@ function FeedView({ issues, onProfileClick }: { issues: Issue[], onProfileClick:
           </div>
 
         </div>
-      ))}
-    </div>
+      ))
+      }
+    </div >
   );
 }
 

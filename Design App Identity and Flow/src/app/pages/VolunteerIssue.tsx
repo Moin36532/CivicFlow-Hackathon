@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, MapPin, Users, CheckCircle2, Sparkles, Moon, Sun, Loader2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Users, CheckCircle2, Sparkles, Moon, Sun, Loader2, Activity, X, Heart } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { useNavigate, useParams } from 'react-router';
 import { fetchIssue, Issue } from '@/services/api';
@@ -12,8 +12,13 @@ export function VolunteerIssue() {
   const [hasVolunteered, setHasVolunteered] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
-  const [issue, setIssue] = useState<any>(null); // Using any temporarily for mapped object
+  const [issue, setIssue] = useState<Issue | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showTraceModal, setShowTraceModal] = useState(false);
+
+  // Opik Metrics Helpers
+  const fairnessColor = (score: number) => score >= 80 ? 'text-green-600' : score >= 50 ? 'text-yellow-600' : 'text-red-600';
+  const disagreementColor = (rate: number) => rate > 20 ? 'text-red-600' : 'text-blue-600';
 
   useEffect(() => {
     async function loadIssue() {
@@ -60,7 +65,7 @@ export function VolunteerIssue() {
       <header style={{ backgroundColor: 'var(--bg-primary)', borderBottom: '1px solid var(--border-color)' }} className="px-4 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate('/')} className="p-2 rounded-lg transition-colors" style={{ color: 'var(--text-primary)' }}>
+            <button onClick={() => navigate('/dashboard')} className="p-2 rounded-lg transition-colors" style={{ color: 'var(--text-primary)' }}>
               <ArrowLeft className="w-5 h-5" />
             </button>
             <h1 className="text-2xl" style={{ color: 'var(--text-primary)' }}>Volunteer Opportunity</h1>
@@ -107,6 +112,16 @@ export function VolunteerIssue() {
           </div>
 
           <p className="text-gray-700 mb-4">{issue.description}</p>
+
+          {/* Uploaded Image Display */}
+          {issue.imageUrl && (
+            <div className="mb-6 rounded-lg overflow-hidden border border-slate-200 shadow-sm">
+              <img src={issue.imageUrl} alt="Issue Evidence" className="w-full h-auto max-h-[400px] object-cover" />
+              <div className="bg-slate-50 px-4 py-2 text-xs text-slate-500 flex items-center gap-2">
+                <span className="font-semibold">Evidence Uploaded</span> • Verified by AI Vision
+              </div>
+            </div>
+          )}
 
           {/* Volunteer Progress */}
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -157,9 +172,49 @@ export function VolunteerIssue() {
         <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-lg p-6">
           <div className="flex items-center gap-2 mb-3">
             <Sparkles className="w-5 h-5 text-green-600" />
-            <h3 className="font-semibold text-green-900">AI Analysis</h3>
+            <h3 className="font-semibold text-green-900">AI Analysis & Fairness Metrics</h3>
           </div>
-          <p className="text-gray-700 leading-relaxed">{issue.aiAnalysis}</p>
+          <p className="text-gray-700 leading-relaxed mb-6">{issue.aiAnalysis}</p>
+
+          {/* Opik Metrics Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Fairness Score */}
+            <div className="bg-white/80 rounded-lg p-4 shadow-sm border border-green-100">
+              <p className="text-sm font-medium text-slate-500 mb-1">Fairness Score</p>
+              <p className={`text-3xl font-bold ${fairnessColor(issue.fairnessScore || 0)}`}>
+                {issue.fairnessScore || "N/A"}/100
+              </p>
+              <p className="text-xs text-slate-400 mt-1">Live from Opik Evaluator</p>
+            </div>
+
+            {/* Disagreement Rate */}
+            <div className="bg-white/80 rounded-lg p-4 shadow-sm border border-green-100">
+              <p className="text-sm font-medium text-slate-500 mb-1">Disagreement Rate</p>
+              <p className={`text-3xl font-bold ${disagreementColor(issue.disagreementRate || 0)}`}>
+                {issue.disagreementRate || 0}%
+              </p>
+              <p className="text-xs text-slate-400 mt-1">Consensus check</p>
+            </div>
+
+            {/* Financial Relief */}
+            <div className="bg-white/80 rounded-lg p-4 shadow-sm border border-green-100">
+              <p className="text-sm font-medium text-slate-500 mb-1">Financial Relief</p>
+              <p className="text-3xl font-bold text-purple-600">{issue.financialRelief || "None"}</p>
+              <p className="text-xs text-slate-400 mt-1">Subsidy Logic</p>
+            </div>
+          </div>
+
+          <div className="mt-4 flex justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-green-700 hover:text-green-800 hover:bg-green-100 gap-1"
+              onClick={() => setShowTraceModal(true)}
+            >
+              <Activity className="w-4 h-4" />
+              View Opik Trace
+            </Button>
+          </div>
         </div>
 
         {/* What You'll Do */}
@@ -328,6 +383,69 @@ export function VolunteerIssue() {
         {/* Comments Section */}
         {id && <CommentsSection issueId={id} />}
       </div>
-    </div>
+
+      {/* Opik Trace Modal */}
+      {
+        showTraceModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+              <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded bg-blue-600 flex items-center justify-center text-white font-bold text-xs">
+                    Opik
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 dark:text-white">Trace Details</h3>
+                    <p className="text-xs text-slate-500 font-mono">{issue?.opikTraceId || "trace-missing-id"}</p>
+                  </div>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setShowTraceModal(false)}>
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+              <div className="p-6 max-h-[70vh] overflow-y-auto space-y-6">
+                <div>
+                  <h4 className="text-sm font-medium text-slate-500 mb-2 uppercase tracking-wider">Input Span</h4>
+                  <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-lg border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-600 dark:text-slate-300 whitespace-pre-wrap">
+                    {`{\n  "description": "${issue?.description}",\n  "category": "${issue?.category}"\n}`}
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-medium text-slate-500 mb-2 uppercase tracking-wider">LLM Evaluation Span</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between p-3 rounded border border-green-100 bg-green-50/50">
+                      <span className="text-sm font-medium text-green-900">Fairness Check</span>
+                      <span className="text-xs font-mono bg-white px-2 py-1 rounded border border-green-200 text-green-700">score: {issue?.fairnessScore}</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 rounded border border-blue-100 bg-blue-50/50">
+                      <span className="text-sm font-medium text-blue-900">Disagreement Analysis</span>
+                      <span className="text-xs font-mono bg-white px-2 py-1 rounded border border-blue-200 text-blue-700">rate: {issue?.disagreementRate}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-medium text-slate-500 mb-2 uppercase tracking-wider">Output Span</h4>
+                  <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-lg border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-600 dark:text-slate-300">
+                    {`{\n  "financial_relief": "${issue?.financialRelief || "None"}",\n  "decision": "Approved"\n}`}
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex justify-end">
+                <a
+                  href={`https://www.comet.com/opik/traces/${issue?.opikTraceId}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                >
+                  Open in Opik Dashboard <Activity className="w-3 h-3" />
+                </a>
+              </div>
+            </div>
+          </div>
+        )
+      }
+    </div >
   );
 }

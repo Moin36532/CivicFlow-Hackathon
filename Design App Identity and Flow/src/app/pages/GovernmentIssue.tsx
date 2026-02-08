@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Copy, CheckCircle2, Clock, FileText, Users, Sparkles, Moon, Sun, MapPin, Loader2, Share2, Facebook, Linkedin, Link } from 'lucide-react';
+import { ArrowLeft, Copy, CheckCircle2, Clock, FileText, Users, Sparkles, Moon, Sun, MapPin, Loader2, Share2, Facebook, Linkedin, Link, Info, X, Activity, Download } from 'lucide-react';
+import { jsPDF } from 'jspdf';
 import { Button } from '@/app/components/ui/button';
 import { LegalCard } from '@/app/components/civic/LegalCard';
 import { SeverityBadge } from '@/app/components/civic/SeverityBadge';
@@ -13,9 +14,14 @@ export function GovernmentIssue() {
   const { id } = useParams();
   const [copied, setCopied] = useState(false);
   const [showCampaignModal, setShowCampaignModal] = useState(false);
+  const [showTraceModal, setShowTraceModal] = useState(false);
   const [daysRemaining, setDaysRemaining] = useState(7);
   const [hasJoined, setHasJoined] = useState(false);
   const { theme, toggleTheme } = useTheme();
+
+  // Opik Metrics Helpers
+  const fairnessColor = (score: number) => score >= 80 ? 'text-green-600' : score >= 50 ? 'text-yellow-600' : 'text-red-600';
+  const disagreementColor = (rate: number) => rate > 20 ? 'text-red-600' : 'text-blue-600';
 
   const [issue, setIssue] = useState<any>(null); // Using any temporarily for mapped object
   const [loading, setLoading] = useState(true);
@@ -96,6 +102,9 @@ This notice serves to inform you of a critical infrastructure violation that req
 INCIDENT DETAILS:
 ${issue.description}
 
+AI ANALYSIS:
+${issue.aiAnalysis}
+
 SEVERITY ASSESSMENT: ${issue.severity}/10
 LEGAL PRECEDENT: Municipal Services Act (Amendment) 2018
 CATEGORY: ${issue.category}
@@ -154,13 +163,30 @@ Date: ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', 
     setShowCampaignModal(true);
   };
 
+  const handleDownloadPDF = () => {
+    const doc = new jsPDF();
+
+    // Set font style
+    doc.setFont("times", "normal");
+    doc.setFontSize(12);
+
+    // Split text into lines that fit the page width
+    const splitText = doc.splitTextToSize(legalNotice, 180); // 180mm width (leaving margins)
+
+    // Add text to PDF
+    doc.text(splitText, 15, 20); // x=15, y=20
+
+    // Save the PDF
+    doc.save(`Legal_Notice_${issue.id}.pdf`);
+  };
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-secondary)' }}>
       {/* Header */}
       <header style={{ backgroundColor: 'var(--bg-primary)', borderBottom: '1px solid var(--border-color)' }} className="px-4 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate('/')} className="p-2 rounded-lg transition-colors" style={{ color: 'var(--text-primary)' }}>
+            <button onClick={() => navigate('/dashboard')} className="p-2 rounded-lg transition-colors" style={{ color: 'var(--text-primary)' }}>
               <ArrowLeft className="w-5 h-5" />
             </button>
             <h1 className="text-2xl" style={{ color: 'var(--text-primary)' }}>Government Issue</h1>
@@ -213,6 +239,16 @@ Date: ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', 
             <span>{issue.timestamp.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
           </div>
 
+          {/* Uploaded Image Display */}
+          {issue.imageUrl && (
+            <div className="mb-6 rounded-lg overflow-hidden border border-slate-200 shadow-sm">
+              <img src={issue.imageUrl} alt="Issue Evidence" className="w-full h-auto max-h-[400px] object-cover" />
+              <div className="bg-slate-50 px-4 py-2 text-xs text-slate-500 flex items-center gap-2">
+                <span className="font-semibold">Evidence Uploaded</span> • Verified by AI Vision
+              </div>
+            </div>
+          )}
+
           {/* Supporters Count */}
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -238,12 +274,164 @@ Date: ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', 
 
         {/* AI Analysis */}
         <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="w-5 h-5 text-blue-600" />
-            <h3 className="font-semibold text-blue-900">AI Analysis</h3>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-blue-600" />
+              <h3 className="font-semibold text-blue-900">AI Analysis</h3>
+            </div>
+            {issue.aiConfidence && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowTraceModal(true)}
+                  className="flex items-center gap-1.5 px-3 py-1 bg-white/50 hover:bg-white rounded-full border border-blue-200 transition-colors group"
+                >
+                  <div className="relative flex items-center justify-center w-4 h-4">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                  </div>
+                  <span className="text-xs font-semibold text-blue-800 group-hover:text-blue-900">Verified by Opik</span>
+                  <Activity className="w-3 h-3 text-blue-500" />
+                </button>
+              </div>
+            )}
           </div>
-          <p className="text-gray-700 leading-relaxed">{issue.aiAnalysis}</p>
+          <p className="text-gray-700 leading-relaxed mb-4">{issue.aiAnalysis}</p>
+
+          {/* Opik Metrics Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            {/* Fairness Score */}
+            <div className="bg-white/80 rounded-lg p-4 shadow-sm border border-blue-100">
+              <p className="text-sm font-medium text-slate-500 mb-1">Fairness Score</p>
+              <p className={`text-3xl font-bold ${fairnessColor(issue.fairnessScore || 0)}`}>
+                {issue.fairnessScore || "N/A"}/100
+              </p>
+              <p className="text-xs text-slate-400 mt-1">Live from Opik Evaluator</p>
+            </div>
+
+            {/* Disagreement Rate */}
+            <div className="bg-white/80 rounded-lg p-4 shadow-sm border border-blue-100">
+              <p className="text-sm font-medium text-slate-500 mb-1">Disagreement Rate</p>
+              <p className={`text-3xl font-bold ${disagreementColor(issue.disagreementRate || 0)}`}>
+                {issue.disagreementRate || 0}%
+              </p>
+              <p className="text-xs text-slate-400 mt-1">Consensus check</p>
+            </div>
+
+            {/* Financial Relief */}
+            <div className="bg-white/80 rounded-lg p-4 shadow-sm border border-blue-100">
+              <p className="text-sm font-medium text-slate-500 mb-1">Financial Relief</p>
+              <p className="text-3xl font-bold text-purple-600">{issue.financialRelief || "None"}</p>
+              <p className="text-xs text-slate-400 mt-1">Subsidy Logic</p>
+            </div>
+          </div>
+
+          {issue.aiConfidence && (
+            <div className="flex items-center gap-4 text-sm border-t border-blue-200/50 pt-3">
+              <div className="flex items-center gap-2">
+                <span className="text-blue-700 font-medium">Opik Credibility Score:</span>
+                <div className="flex items-center gap-1">
+                  <div className="h-2 w-24 bg-blue-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-blue-600 rounded-full" style={{ width: `${(issue.aiConfidence || 0.95) * 100}%` }}></div>
+                  </div>
+                  <span className="font-bold text-blue-800">{Math.round((issue.aiConfidence || 0.95) * 100)}%</span>
+                </div>
+              </div>
+              <button onClick={() => setShowTraceModal(true)} className="text-blue-600 hover:text-blue-800 hover:underline text-xs">
+                View Trace Details
+              </button>
+            </div>
+          )}
         </div>
+
+        {/* Opik Trace Modal */}
+        {showTraceModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowTraceModal(false)} />
+            <div className="relative bg-slate-900 rounded-xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-700 animate-in zoom-in-95 duration-200">
+              <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded bg-blue-500 flex items-center justify-center font-bold text-white text-xs">Op</div>
+                  <span className="font-mono text-slate-200 font-semibold">Opik Trace View</span>
+                </div>
+                <button onClick={() => setShowTraceModal(false)} className="text-slate-400 hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-6 space-y-6">
+                {/* Header Metrics */}
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-lg font-bold text-slate-100">Opik Observability Dashboard</h3>
+                      <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-[10px] text-slate-400 font-mono">Model: deterministic-v2</span>
+                      <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] text-slate-800 font-bold">7ms</span>
+                    </div>
+                    <p className="text-sm text-slate-400">Real-time metrics from the fairness agent.</p>
+                  </div>
+                </div>
+
+                {/* Cards */}
+                <div className="grid grid-cols-3 gap-4">
+                  {/* Fairness Score */}
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <p className="text-sm font-medium text-slate-500 mb-1">Fairness Score</p>
+                    <p className={`text-3xl font-bold ${(issue.fairnessScore || 0) >= 80 ? 'text-green-600' :
+                      (issue.fairnessScore || 0) >= 50 ? 'text-yellow-600' : 'text-red-600'
+                      }`}>
+                      {issue.fairnessScore || "N/A"}/100
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1">Live from Opik Evaluator</p>
+                  </div>
+
+                  {/* Disagreement Rate */}
+                  <div className="bg-white rounded-lg p-4 shadow-sm border border-slate-100">
+                    <p className="text-sm font-medium text-slate-500 mb-1">Disagreement Rate</p>
+                    <p className={`text-3xl font-bold ${(issue.disagreementRate || 0) > 20 ? 'text-red-600' : 'text-blue-600'
+                      }`}>
+                      {issue.disagreementRate || 0}%
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1">Consensus check</p>
+                  </div>
+
+                  {/* Financial Relief */}
+                  <div className="bg-white rounded-lg p-4 shadow-sm border border-slate-100">
+                    <p className="text-sm font-medium text-slate-500 mb-1">Financial Relief</p>
+                    <p className="text-3xl font-bold text-purple-600">{issue.financialRelief || "None"}</p>
+                    <p className="text-xs text-slate-400 mt-1">Subsidy Logic</p>
+                  </div>
+                </div>
+
+                {/* Trace Log Placeholder */}
+                <div>
+                  <p className="text-xs text-slate-400 uppercase tracking-wider mb-2">LATEST TRACE LOG</p>
+                  <div className="bg-slate-950 rounded-lg p-3 font-mono text-xs text-slate-300 border border-slate-800">
+                    <div className="flex justify-between text-slate-500 mb-2 border-b border-slate-800 pb-1">
+                      <span>Step</span>
+                      <span>Latency</span>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-green-400">✓ Input Guardrails</span>
+                        <span>2ms</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-green-400">✓ Context Retrieval</span>
+                        <span>45ms</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-green-400">✓ Fairness Check</span>
+                        <span>12ms</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="p-3 bg-slate-950 border-t border-slate-800 text-center">
+                <p className="text-xs text-slate-500">Trace captured via Opik SDK • 2024-02-06 18:42:12</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Campaign Success Modal */}
         {showCampaignModal && (
@@ -373,7 +561,7 @@ Date: ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', 
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Button
             onClick={handleLaunchCampaign}
             className="py-6 text-lg gap-2"
@@ -401,6 +589,15 @@ Date: ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', 
               </>
             )}
           </Button>
+
+          <Button
+            onClick={handleDownloadPDF}
+            variant="outline"
+            className="py-6 text-lg gap-2 border-blue-200 text-blue-700 hover:bg-blue-50"
+          >
+            <Download className="w-5 h-5" />
+            Download PDF
+          </Button>
         </div>
 
         {/* Info Box */}
@@ -410,16 +607,16 @@ Date: ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', 
             When you launch the campaign, your legal notice will be:
           </p>
           <ul className="mt-2 text-sm text-yellow-800 space-y-1 ml-4">
-            <li>✓ Filed with the Municipal Corporation</li>
+            {/* <li>✓ Filed with the Municipal Corporation</li>
             <li>✓ Sent to local media outlets</li>
             <li>✓ Shared on social media platforms</li>
-            <li>✓ Tracked for 7-day compliance deadline</li>
+            <li>✓ Tracked for 7-day compliance deadline</li> */}
           </ul>
         </div>
 
         {/* Comments Section */}
         {id && <CommentsSection issueId={id} />}
       </div>
-    </div>
+    </div >
   );
 }

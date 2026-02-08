@@ -15,6 +15,7 @@ interface AnalysisResult {
   legalReference?: string;
   matchedVolunteers?: number;
   aiAnalysis?: string;
+  imageUrl?: string;
 }
 
 export function ReportIssue() {
@@ -23,6 +24,23 @@ export function ReportIssue() {
   const [description, setDescription] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [location, setLocation] = useState<{ lat: number; lon: number }>({ lat: 29.3956, lon: 71.6833 }); // Default to Bahawalpur
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocation({
+            lat: position.coords.latitude,
+            lon: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+        }
+      );
+    }
+  }, []);
 
   // Voice Typing State
   const [isListening, setIsListening] = useState(false);
@@ -131,7 +149,8 @@ export function ReportIssue() {
         category: analysis.category,
         legalReference: isGovt ? (analysis.legal_precedent || 'Local Govt Act 2013, Section 11-B') : undefined,
         matchedVolunteers: isGovt ? undefined : (analysis.matched_volunteers_count || Math.floor(Math.random() * 5) + 3),
-        aiAnalysis: analysis.ai_analysis
+        aiAnalysis: analysis.ai_analysis,
+        imageUrl: analysis.image_url
       });
 
       setStep('result');
@@ -156,13 +175,16 @@ export function ReportIssue() {
         title: analysisResult.category + " Issue", // Simple title generation if missing
         category: analysisResult.category,
         description: description,
-        lat: 29.3956, // Mock for now, should use real location
-        lon: 71.6833,
+        lat: location.lat,
+        lon: location.lon,
         tags: [analysisResult.category],
         severity: analysisResult.severity,
         ai_analysis: analysisResult.aiAnalysis,
         legal_precedent: analysisResult.legalReference,
-        matched_volunteers_count: analysisResult.matchedVolunteers
+        matched_volunteers_count: analysisResult.matchedVolunteers,
+        image_url: analysisResult.imageUrl,
+        reported_by: "Jon Anderson",
+        avatar: "https://t4.ftcdn.net/jpg/06/08/55/73/360_F_608557356_ELcD2pwQO9pduTRL30umabzgJoQn5fnd.jpg"
       };
 
       await fetch('http://localhost:8000/publish_issue', {
@@ -172,7 +194,7 @@ export function ReportIssue() {
       });
 
       // Proceed to dashboard
-      navigate('/');
+      navigate('/dashboard');
 
     } catch (error) {
       console.error("Publish failed", error);
@@ -253,23 +275,22 @@ export function ReportIssue() {
 
             {/* Description Input */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 transition-colors">
-              <label className="block mb-4">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold text-lg text-slate-900 dark:text-slate-100">What's wrong?</span>
-                  <button
-                    onClick={toggleListening}
-                    className={`p-2 rounded-full transition-all duration-300 ${isListening
-                      ? 'bg-red-500 text-white animate-pulse shadow-red-500/50 shadow-lg'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
-                    title={isListening ? "Stop Recording" : "Start Voice Typing"}
-                  >
-                    {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-                  </button>
-                </div>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                  e.g., "Gutter flowing in Model Town" or "Need food donations"
-                </p>
-              </label>
+              <div className="flex justify-between items-center mb-4">
+                <label className="font-semibold text-lg text-slate-900 dark:text-slate-100">What's wrong?</label>
+                <button
+                  onClick={toggleListening}
+                  className={`p-2 rounded-full transition-all duration-300 ${isListening
+                    ? 'bg-red-500 text-white animate-pulse shadow-red-500/50 shadow-lg'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+                  title={isListening ? "Stop Recording" : "Start Voice Typing"}
+                >
+                  {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                </button>
+              </div>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 mt-[-10px]">
+                e.g., "Gutter flowing in Model Town" or "Need food donations"
+              </p>
+
               <div className="relative">
                 <Textarea
                   value={description}

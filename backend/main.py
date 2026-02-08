@@ -26,6 +26,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from fastapi.staticfiles import StaticFiles
+# Mount uploads directory to serve images
+os.makedirs("uploads", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
 # --- PDF GENERATOR HELPER ---
 def create_pdf(issue):
     pdf = FPDF()
@@ -61,6 +66,9 @@ def create_pdf(issue):
     pdf.output(filename)
     return filename, safe_text
 
+# --- GLOBAL FEED CACHE ---
+FEED_CACHE = {} # Key: user_id (using 'demo_user' for now), Value: List[dict]
+
 # --- ENDPOINTS ---
 
 from pydantic import BaseModel
@@ -80,6 +88,7 @@ class PublishIssueRequest(BaseModel):
     legal_precedent: Optional[str] = None
     matched_volunteers_count: Optional[int] = None
     responsible_department: Optional[str] = "General"
+    image_url: Optional[str] = None # Added field for image URL
 
 # ... (keep existing code until report_issue) ...
 
@@ -99,6 +108,21 @@ async def analyze_issue(description: str = Form(""), file: UploadFile = File(Non
     analysis['lat'] = 29.3956 # Mock GPS
     analysis['lon'] = 71.6833
     
+    # SAVE IMAGE IF PRESENT
+    image_url = None
+    if file:
+        try:
+            filename = f"upload_{os.urandom(4).hex()}_{file.filename}"
+            filepath = os.path.join("uploads", filename)
+            with open(filepath, "wb") as f:
+                f.write(image_bytes)
+            image_url = f"http://localhost:8000/uploads/{filename}"
+            print(f"📸 Image saved to {image_url}")
+        except Exception as e:
+            print(f"❌ Failed to save image: {e}")
+
+    analysis['image_url'] = image_url
+    
     # We return the analysis to the frontend. Frontend will verify and then call /publish
     return {"status": "analyzed", "analysis": analysis}
 
@@ -110,12 +134,38 @@ async def publish_new_issue(issue: PublishIssueRequest):
     
     # save_issue_to_db handles mapping
     new_id = save_issue_to_db(data)
+
+    # --- UPDATE CACHE: INSERT AT TOP ---
+    if 'demo_user' in FEED_CACHE:
+        print("⚡ Injecting new issue into Feed Cache...")
+        new_feed_item = {
+            "id": new_id,
+            "title": data['title'],
+            "category": data['category'],
+            "description": data['description'],
+            "severity": data['severity'],
+            "dist_km": 0.1, # Brand new = close?
+            "avatar": "", # Default
+            "reason": "Your Report",
+            "match_score": 100, # Max priority
+            "reportedBy": "You",
+            "department": data.get('department', 'General'),
+            "image_url": data.get('image_url') # Add to cache too
+        }
+        FEED_CACHE['demo_user'].insert(0, new_feed_item)
     
     return {"status": "saved", "id": new_id}
 
 # --- UPDATE THIS FUNCTION IN backend/main.py ---
 @app.post("/my_feed")
 async def get_volunteer_feed(user_skills: str = Form(...), user_lat: float = Form(...), user_lon: float = Form(...)):
+    # 0. CHECK CACHE
+    if 'demo_user' in FEED_CACHE:
+        print("🚀 returning CACHED feed (Fast!)")
+        return {"feed": FEED_CACHE['demo_user']}
+
+    print("🧠 Generating NEW AI Feed (Slow/First Load)...")
+
     # 1. Get All Issues from DB
     all_issues = get_open_issues()
     
@@ -150,13 +200,16 @@ async def get_volunteer_feed(user_skills: str = Form(...), user_lat: float = For
             "reason": "AI Match" if is_recommended else "Nearby Issue", # Fallback reason
             "match_score": 90 if is_recommended else 50,
             "reportedBy": issue.get('reported_by', 'Civic Citizen'),
-            "department": issue.get('department', 'General')
+            "department": issue.get('department', 'General'),
+            "image_url": issue.get('image_url') # Include image in feed
         })
 
     # Sort: High scores first
     final_feed.sort(key=lambda x: x['match_score'], reverse=True)
     
-    print(f"✅ Sending {len(final_feed)} items to frontend.")
+    # 4. SAVE TO CACHE
+    FEED_CACHE['demo_user'] = final_feed
+    
     print(f"✅ Sending {len(final_feed)} items to frontend.")
     return {"feed": final_feed}
 
@@ -189,6 +242,12 @@ async def get_issue(issue_id: int):
             "volunteersNeeded": 10, 
             "reportedBy": issue.get('reported_by', 'Civic Citizen'),
             "department": issue.get('department', 'General'),
+            "ai_confidence": issue.get('ai_confidence'),
+            "opik_trace_id": issue.get('opik_trace_id'),
+            "fairness_score": issue.get('fairness_score'),
+            "disagreement_rate": issue.get('disagreement_rate'),
+            "financial_relief": issue.get('financial_relief'),
+            "image_url": issue.get('image_url'),
             "timestamp": "2024-02-01" 
         }
     except Exception as e:

@@ -22,6 +22,12 @@ export interface Issue {
   department?: string;
   avatar?: string; // New field
   timestamp?: Date;
+  aiConfidence?: number;
+  opikTraceId?: string;
+  fairnessScore?: number;
+  disagreementRate?: number;
+  financialRelief?: string;
+  imageUrl?: string;
 }
 
 // Helper to determine type from category
@@ -94,12 +100,17 @@ export const getAvatar = (name: string) => {
 }
 
 // 1. GET THE FEED
-export const fetchFeed = async () => {
+export const fetchFeed = async (userLat?: number, userLon?: number) => {
   const formData = new FormData();
   // We send fake user coordinates to get the "Golden Match"
   formData.append("user_skills", "Medical, Rescue");
-  formData.append("user_lat", "29.3956");
-  formData.append("user_lon", "71.6833");
+
+  // Use provided coordinates or default to Bahawalpur
+  const lat = userLat ? userLat.toString() : "29.3956";
+  const lon = userLon ? userLon.toString() : "71.6833";
+
+  formData.append("user_lat", lat);
+  formData.append("user_lon", lon);
 
   try {
     const response = await fetch(`${API_URL}/my_feed`, {
@@ -117,8 +128,8 @@ export const fetchFeed = async () => {
       aiAnalysis: item.aiAnalysis || "Analysing...",
       severity: item.severity,
       location: {
-        lat: item.lat || 29.3956,
-        lng: item.lon || 71.6833,
+        lat: item.lat || parseFloat(lat), // Fallback to user loc if missing
+        lng: item.lon || parseFloat(lon),
         address: item.location || "Bahawalpur"
       },
       category: item.category,
@@ -130,7 +141,8 @@ export const fetchFeed = async () => {
       volunteersJoined: Math.floor(Math.random() * 8),
       reportedBy: item.reportedBy || "Civic Citizen",
       department: getDepartment(item),
-      avatar: getAvatar(item.reportedBy || "User" + item.id)
+      avatar: getAvatar(item.reportedBy || "User" + item.id),
+      imageUrl: item.image_url
     }));
   } catch (error) {
     console.error("Feed Error:", error);
@@ -201,7 +213,13 @@ export const fetchIssue = async (id: string) => {
       volunteersJoined: item.volunteersJoined,
       reportedBy: item.reportedBy,
       department: getDepartment(item),
-      avatar: getAvatar(item.reportedBy || "User" + item.id)
+      avatar: getAvatar(item.reportedBy || "User" + item.id),
+      aiConfidence: item.ai_confidence,
+      opikTraceId: item.opik_trace_id,
+      fairnessScore: item.fairness_score,
+      disagreementRate: item.disagreement_rate,
+      financialRelief: item.financial_relief,
+      imageUrl: item.image_url // Mapped from backend
     };
   } catch (error) {
     console.error("api.ts: Fetch Issue Error:", error);

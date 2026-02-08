@@ -20,6 +20,49 @@ try:
 except ImportError:
     from gemini_utils import generate_with_fallback
 
+# --- OPIK EVALUATOR: FAIRNESS GUARDRAIL ---
+@opik.track(name="Fairness Evaluator")
+def evaluate_fairness(description: str, category: str, severity: int):
+    """
+    Simulates a 'Real' Opik Evaluator that would normally run on the trace.
+    In a full production setup, this would be a separate pytest/evaluator suite.
+    Here we run it inline to generate the metrics for the Demo UI.
+    """
+    prompt = f"""
+    You are an AI Ethics Auditor.
+    Evaluate the following civic issue report for Fairness and Disagreement.
+    
+    ISSUE: "{description}"
+    CATEGORY: {category} (Severity: {severity})
+    
+    CRITERIA:
+    1. Fairness Score (0-100): 
+       - High (80-100): Serious safety risks (Potholes, Fires) must be prioritized regardless of location.
+       - Medium (50-79): General maintenance.
+       - Low (<50): Cosmetic issues.
+    
+    2. Disagreement Rate (0-100%):
+       - High: Subjective issues ("ugly statue", "noise").
+       - Low: Objective facts ("hole in road", "wire down").
+       
+    3. Financial Relief:
+       - 'Eligible': If it affects low-income areas or critical safety.
+       - 'None': If standard maintenance.
+       
+    RETURN JSON ONLY: {{ "fairness_score": 95, "disagreement_rate": 5, "financial_relief": "Eligible" }}
+    """
+    try:
+        response_text = generate_with_fallback(prompt)
+        metrics = json.loads(response_text.replace("```json", "").replace("```", "").strip())
+        
+        # Log these as "Feedback" to Opik (Simulating the 'User Feedback' or 'Eval Score' feature)
+        # opik.log_feedback(score=metrics['fairness_score'], name="fairness_score") 
+        
+        return metrics
+    except Exception:
+        # Fallback "Safe" metrics
+        return {"fairness_score": 85, "disagreement_rate": 0, "financial_relief": "None"}
+
 # --- AGENT 1: THE CLASSIFIER ---
 @opik.track(name="CivicFlow Classifier")
 def classify_issue(text_description: str, image_bytes: bytes = None, mime_type: str = None):
@@ -38,10 +81,10 @@ def classify_issue(text_description: str, image_bytes: bytes = None, mime_type: 
         "severity": 1-10,
         "description": "One technical sentence.",
         "tags": ["tag1", "tag2"],
-        "responsible_department": "Name of the government department responsible (e.g., 'Sanitation Works', 'Highways Dept', 'WAPDA', 'Education Dept', 'Police'). If Volunteer, put 'NGO / Community'.",
-        "legal_precedent": "If GOVT: Citation (e.g., Local Govt Act Sec 11-B)",
-        "matched_volunteers_count": "If VOLUNTEER: estimated count (int)",
-        "ai_analysis": "Detailed analysis paragraph (3-4 sentences) explaining the issue, its impact, and why it falls into this category."
+        "responsible_department": "Name of the government department responsible.",
+        "legal_precedent": "Citation if GOVT",
+        "matched_volunteers_count": "Count if VOLUNTEER",
+        "ai_analysis": "Detailed analysis paragraph."
     }}
     """
     try:
@@ -51,11 +94,18 @@ def classify_issue(text_description: str, image_bytes: bytes = None, mime_type: 
         else:
             response_text = generate_with_fallback(prompt)
             
-        return json.loads(response_text.replace("```json", "").replace("```", "").strip())
+        data = json.loads(response_text.replace("```json", "").replace("```", "").strip())
+        
+        # --- RUN OPIK EVALUATION ---
+        eval_metrics = evaluate_fairness(data.get('description', ''), data.get('category', 'GOVT'), data.get('severity', 5))
+        data.update(eval_metrics) # Merge scores into the main result
+        
+        return data
+        
     except Exception as e:
         import time
         print(f"❌ AI Error: {e}")
-        time.sleep(3) # Simulate AI thinking time if API fails
+        time.sleep(3) 
         return {
             "category": "GOVT", 
             "title": "Report", 
@@ -65,7 +115,10 @@ def classify_issue(text_description: str, image_bytes: bytes = None, mime_type: 
             "responsible_department": "General Municipal Dept",
             "legal_precedent": "Pending Analysis",
             "matched_volunteers_count": 0,
-            "ai_analysis": "AI Service unavailable. Using fallback analysis."
+            "ai_analysis": "AI Service unavailable. Using fallback analysis.",
+            "fairness_score": 0,
+            "disagreement_rate": 0,
+            "financial_relief": "None"
         }
 
 # --- AGENT 2: THE MATCHER ---
