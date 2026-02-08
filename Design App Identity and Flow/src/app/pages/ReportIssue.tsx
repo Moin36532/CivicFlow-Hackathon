@@ -4,6 +4,8 @@ import { Button } from '@/app/components/ui/button';
 import { Textarea } from '@/app/components/ui/textarea';
 import { useNavigate } from 'react-router';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 
 type Step = 'capture' | 'analyzing' | 'result';
 type IssueType = 'government' | 'volunteer' | null;
@@ -187,7 +189,7 @@ export function ReportIssue() {
         avatar: "https://t4.ftcdn.net/jpg/06/08/55/73/360_F_608557356_ELcD2pwQO9pduTRL30umabzgJoQn5fnd.jpg"
       };
 
-      await fetch('http://localhost:8000/publish_issue', {
+      await fetch(`${API_URL}/publish_issue`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
