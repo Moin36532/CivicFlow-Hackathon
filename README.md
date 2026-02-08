@@ -58,8 +58,7 @@ Opik API Key (Optional, for tracing)
 
 2. Clone the Repository
 Bash
-git clone https://github.com/yourusername/civicflow.git
-cd civicflow
+git clone https://github.com/moin36532/CivicFlow-Hackathon
 3. 🐍 Backend Setup (The Brain)
 Navigate to the backend folder:
 
