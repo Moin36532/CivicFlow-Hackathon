@@ -58,18 +58,23 @@ export function LandingPage() {
                         >
                             Launch Live Demo <ArrowRight className="w-5 h-5" />
                         </button>
-                        <button className="px-8 py-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                        <a
+                            href="https://youtu.be/0UusCPDqavA"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-8 py-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center"
+                        >
                             Watch Video
-                        </button>
+                        </a>
                     </div>
 
                     <div className="mt-16 relative mx-auto max-w-5xl">
                         <div className="rounded-2xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-                            {/* Placeholder for App Screenshot - Using a gradient/mock for now */}
-                            <div className="aspect-[16/9] bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
-                                <p className="text-slate-400 font-medium">App Dashboard Preview</p>
-                                {/* Ideally, we'd put an actual screenshot of the dashboard here */}
-                            </div>
+                            <img
+                                src="/assets/dashboard_preview.svg"
+                                alt="App Dashboard Preview"
+                                className="w-full h-auto object-cover"
+                            />
                         </div>
                         {/* Floating Badges */}
                         <div className="absolute -left-4 top-20 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl flex items-center gap-3 animate-bounce-slow border border-slate-100 dark:border-slate-700">
